@@ -8,22 +8,50 @@ const textureLoader = new THREE.TextureLoader();
 const brick = textureLoader.load("/textures/bricktest.png");
 // Debug
 const gui = new dat.GUI();
-const Sky = require("three-sky");
+
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
-
 // Scene
 const scene = new THREE.Scene();
-
 // Objects
-const geometry = new THREE.SphereBufferGeometry(0.5, 64, 64);
+const geometry = new THREE.SphereBufferGeometry(1, 64, 64);
 const balls = new THREE.SphereBufferGeometry(0.1, 32, 16);
 // Materials
+const shader = {
+  uniforms: {
+    topColor: { type: "c", value: new THREE.Color().setHSL(0.6, 1, 0.75) },
+    bottomColor: { type: "c", value: new THREE.Color(0xffffff) },
+    offset: { type: "f", value: 400 },
+    exponent: { type: "f", value: 0.6 },
+  },
+  vertexShader: [
+    "varying vec3 vWorldPosition;",
+    "void main() {",
+    "	vec4 worldPosition = modelMatrix * vec4( position, 1.0 );",
+    "	vWorldPosition = worldPosition.xyz;",
+    "	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+    "}",
+  ].join("\n"),
+  fragmentShader: [
+    "uniform vec3 topColor;",
+    "uniform vec3 bottomColor;",
+    "uniform float offset;",
+    "uniform float exponent;",
+
+    "varying vec3 vWorldPosition;",
+
+    "void main() {",
+    "	float h = normalize( vWorldPosition + offset ).y;",
+    "	gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( h, exponent ), 0.0 ) ), 1.0 );",
+    "}",
+  ].join("\n"),
+};
 
 const material = new THREE.MeshStandardMaterial();
-material.roughness = 0.2;
-material.metalness = 0.7;
+material.roughness = 0.5;
+material.metalness = 0.5;
 material.normalMap = brick;
+//material.opacity = 0;
 material.color = new THREE.Color(0xffffff);
 
 const material2 = new THREE.MeshStandardMaterial();
@@ -36,9 +64,11 @@ material3.roughness = 0.2;
 material3.metalness = 0.7;
 material3.color = new THREE.Color(0x00ff00);
 // Mesh
+
 const sphere = new THREE.Mesh(geometry, material);
 const sun = new THREE.Mesh(balls, material2);
 const moon = new THREE.Mesh(balls, material3);
+
 scene.add(sphere);
 sphere.add(sun);
 sphere.add(moon);
@@ -48,29 +78,28 @@ const centerRotate = gui.addFolder("Sphere Rotation");
 centerRotate.add(sphere.rotation, "x");
 centerRotate.add(sphere.rotation, "y");
 centerRotate.add(sphere.rotation, "z");
-// Lights
-
-const sunlight = new THREE.PointLight(0xffffff, 0.1);
-//pointLight2.position.x = 2;
-//pointLight2.position.y = 3;
-//pointLight2.position.z = 4;
-//pointLight2.position.set(0, 0, 2);
-sunlight.intensity = 1;
-//sphere.add(sunlight);
-sunlight.position.x = 2;
 
 const sunRay = new THREE.DirectionalLight("0xffffff", 1);
-sphere.add(sunRay);
+//sphere.add(sunRay);
 sunRay.position.x = 2;
-const pointHelp = new THREE.PointLightHelper(sunlight, 1);
-//scene.add(pointHelp);
+
+let sunAngle = 0;
+const sunRay2 = new THREE.DirectionalLight(0xffffff, 1);
+sunRay2.position.z = 0;
+sunRay2.position.x = Math.sin(sunAngle) * 2;
+sunRay2.position.y = Math.cos(sunAngle) * 2;
+//scene.add(sunRay2);
 
 const moonRay = new THREE.DirectionalLight("0xffffff", 1);
-sphere.add(moonRay);
+//sphere.add(moonRay);
 moonRay.position.x = 2;
-//sphere.add(moonlight);
 moonRay.position.x = -2;
 
+const moonRay2 = new THREE.DirectionalLight(0xc2c5df);
+moonRay2.position.z = 0;
+moonRay2.position.x = -Math.sin(sunAngle) * 2;
+moonRay2.position.y = -Math.cos(sunAngle) * 2;
+scene.add(moonRay2);
 /**
  * Sizes
  */
@@ -140,10 +169,11 @@ const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
   // Update objects
-  sphere.rotation.z = (0.25 * elapsedTime) % 6.18;
-  //console.log(sphere.rotation.z, 3.14 > sphere.rotation.z);
-  sunRay.intensity = 3.17 > sphere.rotation.z ? 1 : 0;
-  moonRay.intensity = 3.17 > sphere.rotation.z ? 0 : 1;
+  sunAngle += (0.01 * Math.PI) % (2 * Math.PI);
+  //sunRay2.position.x = -Math.sin(sunAngle) * 10;
+  //sunRay2.position.y = Math.cos(sunAngle) * 10;
+  moonRay2.position.x = -Math.sin(sunAngle) * 10;
+  moonRay2.position.y = Math.cos(sunAngle) * 10;
   //console.log(sphere.rotation.z);
   // Update Orbital Controls
   // controls.update()
