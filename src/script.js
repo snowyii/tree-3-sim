@@ -14,7 +14,7 @@ const canvas = document.querySelector("canvas.webgl");
 // Scene
 const scene = new THREE.Scene();
 // Objects
-const geometry = new THREE.SphereBufferGeometry(1, 64, 64);
+const geometry = new THREE.SphereBufferGeometry(0.5, 64, 64);
 const balls = new THREE.SphereBufferGeometry(0.1, 32, 16);
 // Materials
 
@@ -55,11 +55,21 @@ const sunRay2 = new THREE.DirectionalLight(0xffffff, 1);
 sunRay2.position.z = 0;
 sunRay2.position.x = Math.sin(sunAngle) * 2;
 sunRay2.position.y = Math.cos(sunAngle) * 2;
-//scene.add(sunRay2);
-function sunRayUpdate() {
+scene.add(sunRay2);
+function phase() {
+  if (Math.sin(sunAngle) > Math.sin(0)) {
+    return "day";
+  } else if (Math.sin(sunAngle) > Math.sin(-Math.PI / 6)) {
+    return "twilight";
+  } else {
+    return "night";
+  }
+}
+
+function sunRayUpdate(phase) {
   sunRay2.position.x = Math.sin(sunAngle) * 90000;
   sunRay2.position.y = Math.cos(sunAngle) * 90000;
-  const phase = phase(sunAngle);
+
   if (phase === "day") {
     sunRay2.color.set(
       "rgb(255," +
@@ -78,7 +88,7 @@ function sunRayUpdate() {
         ",0)"
     );
   } else {
-    light.intensity = 0;
+    sunRay2.intensity = 0;
   }
 }
 
@@ -86,7 +96,7 @@ const moonRay2 = new THREE.DirectionalLight(0xc2c5df);
 moonRay2.position.z = 0;
 moonRay2.position.x = -Math.sin(sunAngle) * 2;
 moonRay2.position.y = -Math.cos(sunAngle) * 2;
-scene.add(moonRay2);
+//scene.add(moonRay2);
 /**
  * Sizes
  */
@@ -160,18 +170,8 @@ const shader = {
   ].join("\n"),
 }; //sky shader
 
-function phase() {
-  if (Math.sin(sunAngle) > Math.sin(0)) {
-    return "day";
-  } else if (Math.sin(sunAngle) > Math.sin(-Math.PI / 6)) {
-    return "twilight";
-  } else {
-    return "night";
-  }
-}
-
 //sky
-var skygeo = new THREE.SphereGeometry(700, 32, 15);
+var skygeo = new THREE.SphereGeometry(50, 64, 64);
 var uniform = THREE.UniformsUtils.clone(shader.uniforms);
 var skymaterial = new THREE.ShaderMaterial({
   vertexShader: shader.vertexShader,
@@ -180,9 +180,8 @@ var skymaterial = new THREE.ShaderMaterial({
   side: THREE.BackSide,
 });
 
-sky = new THREE.Mesh(skygeo, skymaterial);
-function updateSky() {
-  const phase = phase(sunAngle);
+var sky = new THREE.Mesh(skygeo, skymaterial);
+function updateSky(phase) {
   if (phase === "day") {
     uniform.topColor.value.set("rgb(0,120,255)");
     uniform.bottomColor.value.set(
@@ -213,6 +212,7 @@ function updateSky() {
   }
 }
 
+scene.add(sky);
 //gui add camera setting
 
 // Controls
@@ -234,16 +234,20 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  */
 
 const clock = new THREE.Clock();
-
+var phase2 = phase();
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
   // Update objects
-  sunAngle += (0.01 * Math.PI) % (2 * Math.PI);
+  sunAngle += 0.01 * Math.PI;
   //sunRay2.position.x = -Math.sin(sunAngle) * 10;
   //sunRay2.position.y = Math.cos(sunAngle) * 10;
-  moonRay2.position.x = -Math.sin(sunAngle) * 10;
-  moonRay2.position.y = Math.cos(sunAngle) * 10;
+  //moonRay2.position.x = -Math.sin(sunAngle) * 10;
+  // moonRay2.position.y = Math.cos(sunAngle) * 10;
+  phase2 = phase();
+  updateSky(phase2);
+
+  sunRayUpdate(phase2);
   //console.log(sphere.rotation.z);
   // Update Orbital Controls
   // controls.update()
