@@ -17,37 +17,8 @@ const scene = new THREE.Scene();
 const geometry = new THREE.SphereBufferGeometry(1, 64, 64);
 const balls = new THREE.SphereBufferGeometry(0.1, 32, 16);
 // Materials
-const shader = {
-  uniforms: {
-    topColor: { type: "c", value: new THREE.Color().setHSL(0.6, 1, 0.75) },
-    bottomColor: { type: "c", value: new THREE.Color(0xffffff) },
-    offset: { type: "f", value: 400 },
-    exponent: { type: "f", value: 0.6 },
-  },
-  vertexShader: [
-    "varying vec3 vWorldPosition;",
-    "void main() {",
-    "	vec4 worldPosition = modelMatrix * vec4( position, 1.0 );",
-    "	vWorldPosition = worldPosition.xyz;",
-    "	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
-    "}",
-  ].join("\n"),
-  fragmentShader: [
-    "uniform vec3 topColor;",
-    "uniform vec3 bottomColor;",
-    "uniform float offset;",
-    "uniform float exponent;",
 
-    "varying vec3 vWorldPosition;",
-
-    "void main() {",
-    "	float h = normalize( vWorldPosition + offset ).y;",
-    "	gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( h, exponent ), 0.0 ) ), 1.0 );",
-    "}",
-  ].join("\n"),
-};
-
-const material = new THREE.MeshStandardMaterial();
+const material = new THREE.MeshStandardMaterial(); //test center point
 material.roughness = 0.5;
 material.metalness = 0.5;
 material.normalMap = brick;
@@ -57,15 +28,15 @@ material.color = new THREE.Color(0xffffff);
 const material2 = new THREE.MeshStandardMaterial();
 material2.roughness = 0.2;
 material2.metalness = 0.7;
-material2.color = new THREE.Color(0xfa0000);
+material2.color = new THREE.Color(0xfa0000); //test sun
 
 const material3 = new THREE.MeshStandardMaterial();
 material3.roughness = 0.2;
 material3.metalness = 0.7;
-material3.color = new THREE.Color(0x00ff00);
+material3.color = new THREE.Color(0x00ff00); //test moon
 // Mesh
 
-const sphere = new THREE.Mesh(geometry, material);
+const sphere = new THREE.Mesh(geometry, material); //center
 const sun = new THREE.Mesh(balls, material2);
 const moon = new THREE.Mesh(balls, material3);
 
@@ -79,21 +50,37 @@ centerRotate.add(sphere.rotation, "x");
 centerRotate.add(sphere.rotation, "y");
 centerRotate.add(sphere.rotation, "z");
 
-const sunRay = new THREE.DirectionalLight("0xffffff", 1);
-//sphere.add(sunRay);
-sunRay.position.x = 2;
-
 let sunAngle = 0;
 const sunRay2 = new THREE.DirectionalLight(0xffffff, 1);
 sunRay2.position.z = 0;
 sunRay2.position.x = Math.sin(sunAngle) * 2;
 sunRay2.position.y = Math.cos(sunAngle) * 2;
 //scene.add(sunRay2);
-
-const moonRay = new THREE.DirectionalLight("0xffffff", 1);
-//sphere.add(moonRay);
-moonRay.position.x = 2;
-moonRay.position.x = -2;
+function sunRayUpdate() {
+  sunRay2.position.x = Math.sin(sunAngle) * 90000;
+  sunRay2.position.y = Math.cos(sunAngle) * 90000;
+  const phase = phase(sunAngle);
+  if (phase === "day") {
+    sunRay2.color.set(
+      "rgb(255," +
+        (Math.floor(Math.sin(sunAngle) * 200) + 55) +
+        "," +
+        Math.floor(Math.sin(sunAngle) * 200) +
+        ")"
+    );
+  } else if (phase === "twilight") {
+    sunRay2.intensity = 1;
+    sunRay2.color.set(
+      "rgb(" +
+        (255 - Math.floor(Math.sin(sunAngle) * 510 * -1)) +
+        "," +
+        (55 - Math.floor(Math.sin(sunAngle) * 110 * -1)) +
+        ",0)"
+    );
+  } else {
+    light.intensity = 0;
+  }
+}
 
 const moonRay2 = new THREE.DirectionalLight(0xc2c5df);
 moonRay2.position.z = 0;
@@ -142,8 +129,91 @@ cam.add(camera.position, "z");
 
 scene.add(camera);
 
+//sky gang
+const shader = {
+  uniforms: {
+    topColor: { type: "c", value: new THREE.Color().setHSL(0.6, 1, 0.75) },
+    bottomColor: { type: "c", value: new THREE.Color(0xffffff) },
+    offset: { type: "f", value: 400 },
+    exponent: { type: "f", value: 0.6 },
+  },
+  vertexShader: [
+    "varying vec3 vWorldPosition;",
+    "void main() {",
+    "	vec4 worldPosition = modelMatrix * vec4( position, 1.0 );",
+    "	vWorldPosition = worldPosition.xyz;",
+    "	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+    "}",
+  ].join("\n"),
+  fragmentShader: [
+    "uniform vec3 topColor;",
+    "uniform vec3 bottomColor;",
+    "uniform float offset;",
+    "uniform float exponent;",
+
+    "varying vec3 vWorldPosition;",
+
+    "void main() {",
+    "	float h = normalize( vWorldPosition + offset ).y;",
+    "	gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( h, exponent ), 0.0 ) ), 1.0 );",
+    "}",
+  ].join("\n"),
+}; //sky shader
+
+function phase() {
+  if (Math.sin(sunAngle) > Math.sin(0)) {
+    return "day";
+  } else if (Math.sin(sunAngle) > Math.sin(-Math.PI / 6)) {
+    return "twilight";
+  } else {
+    return "night";
+  }
+}
+
+//sky
+var skygeo = new THREE.SphereGeometry(700, 32, 15);
+var uniform = THREE.UniformsUtils.clone(shader.uniforms);
+var skymaterial = new THREE.ShaderMaterial({
+  vertexShader: shader.vertexShader,
+  fragmentShader: shader.fragmentShader,
+  uniforms: uniform,
+  side: THREE.BackSide,
+});
+
+sky = new THREE.Mesh(skygeo, skymaterial);
+function updateSky() {
+  const phase = phase(sunAngle);
+  if (phase === "day") {
+    uniform.topColor.value.set("rgb(0,120,255)");
+    uniform.bottomColor.value.set(
+      "rgb(255," +
+        (Math.floor(Math.sin(sunAngle) * 200) + 55) +
+        "," +
+        Math.floor(Math.sin(sunAngle) * 200) +
+        ")"
+    );
+  } else if (phase === "twilight") {
+    uniform.topColor.value.set(
+      "rgb(0," +
+        (120 - Math.floor(Math.sin(sunAngle) * 240 * -1)) +
+        "," +
+        (255 - Math.floor(Math.sin(sunAngle) * 510 * -1)) +
+        ")"
+    );
+    uniform.bottomColor.value.set(
+      "rgb(" +
+        (255 - Math.floor(Math.sin(sunAngle) * 510 * -1)) +
+        "," +
+        (55 - Math.floor(Math.sin(sunAngle) * 110 * -1)) +
+        ",0)"
+    );
+  } else {
+    uniform.topColor.value.set("black");
+    uniform.bottomColor.value.set("black");
+  }
+}
+
 //gui add camera setting
-// sky and sun
 
 // Controls
 // const controls = new OrbitControls(camera, canvas)
