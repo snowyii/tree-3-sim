@@ -41,14 +41,14 @@ const sun = new THREE.Mesh(balls, material2);
 const moon = new THREE.Mesh(balls, material3);
 
 scene.add(sphere);
-sphere.add(sun);
-sphere.add(moon);
+//sphere.add(sun);
+//sphere.add(moon);
 sun.position.x = 2;
 moon.position.x = -2;
-const centerRotate = gui.addFolder("Sphere Rotation");
-centerRotate.add(sphere.rotation, "x");
-centerRotate.add(sphere.rotation, "y");
-centerRotate.add(sphere.rotation, "z");
+//const centerRotate = gui.addFolder("Sphere Rotation");
+//centerRotate.add(sphere.rotation, "x");
+//centerRotate.add(sphere.rotation, "y");
+//centerRotate.add(sphere.rotation, "z");
 
 let sunAngle = 0;
 const sunRay2 = new THREE.DirectionalLight(0xffffff, 1);
@@ -143,10 +143,10 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.x = 0;
 camera.position.y = 0;
 camera.position.z = 5;
-const cam = gui.addFolder("Cameraman");
-cam.add(camera.position, "x");
-cam.add(camera.position, "y");
-cam.add(camera.position, "z");
+//const cam = gui.addFolder("Cameraman");
+//cam.add(camera.position, "x");
+//cam.add(camera.position, "y");
+//cam.add(camera.position, "z");
 
 scene.add(camera);
 
