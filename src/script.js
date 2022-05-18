@@ -53,9 +53,10 @@ centerRotate.add(sphere.rotation, "z");
 let sunAngle = 0;
 const sunRay2 = new THREE.DirectionalLight(0xffffff, 1);
 sunRay2.position.z = 0;
-sunRay2.position.x = Math.sin(sunAngle) * 2;
-sunRay2.position.y = Math.cos(sunAngle) * 2;
+sunRay2.position.x = Math.sin(sunAngle) * 90000;
+sunRay2.position.y = Math.cos(sunAngle) * 90000;
 scene.add(sunRay2);
+
 function phase() {
   if (Math.sin(sunAngle) > Math.sin(0)) {
     return "day";
@@ -65,10 +66,16 @@ function phase() {
     return "night";
   }
 }
-
+const moonRay2 = new THREE.DirectionalLight(0x506886);
+moonRay2.position.z = 0;
+moonRay2.position.x = -Math.sin(sunAngle) * 2;
+moonRay2.position.y = -Math.cos(sunAngle) * 2;
+scene.add(moonRay2);
 function sunRayUpdate(phase) {
-  sunRay2.position.x = Math.sin(sunAngle) * 90000;
-  sunRay2.position.y = Math.cos(sunAngle) * 90000;
+  sunRay2.position.x = Math.sin(sunAngle + Math.PI / 2) * 90000;
+  sunRay2.position.y = -Math.cos(sunAngle + Math.PI / 2) * 90000;
+  moonRay2.position.x = Math.sin(sunAngle + (3 * Math.PI) / 2) * 90000;
+  moonRay2.position.y = -Math.cos(sunAngle + (3 * Math.PI) / 2) * 90000;
 
   if (phase === "day") {
     sunRay2.color.set(
@@ -78,6 +85,10 @@ function sunRayUpdate(phase) {
         Math.floor(Math.sin(sunAngle) * 200) +
         ")"
     );
+    if (moonRay2.intensity != 0) {
+      moonRay2.intensity -= 0.1;
+    }
+    //moonRay2.intensity = 0;
   } else if (phase === "twilight") {
     sunRay2.intensity = 1;
     sunRay2.color.set(
@@ -87,15 +98,15 @@ function sunRayUpdate(phase) {
         (55 - Math.floor(Math.sin(sunAngle) * 110 * -1)) +
         ",0)"
     );
+    if (moonRay2.intensity != 1) {
+      moonRay2.intensity += 0.1;
+    }
   } else {
     sunRay2.intensity = 0;
+    moonRay2.intensity = 1;
   }
 }
 
-const moonRay2 = new THREE.DirectionalLight(0xc2c5df);
-moonRay2.position.z = 0;
-moonRay2.position.x = -Math.sin(sunAngle) * 2;
-moonRay2.position.y = -Math.cos(sunAngle) * 2;
 //scene.add(moonRay2);
 /**
  * Sizes
@@ -234,17 +245,19 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  */
 
 const clock = new THREE.Clock();
-var phase2 = phase();
+var phase2;
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
   // Update objects
   sunAngle += 0.01 * Math.PI;
+  sunAngle = sunAngle % (2 * Math.PI);
   //sunRay2.position.x = -Math.sin(sunAngle) * 10;
   //sunRay2.position.y = Math.cos(sunAngle) * 10;
   //moonRay2.position.x = -Math.sin(sunAngle) * 10;
   // moonRay2.position.y = Math.cos(sunAngle) * 10;
   phase2 = phase();
+  console.log(sunAngle, phase2);
   updateSky(phase2);
 
   sunRayUpdate(phase2);
