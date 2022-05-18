@@ -257,7 +257,7 @@ const tick = () => {
   //moonRay2.position.x = -Math.sin(sunAngle) * 10;
   // moonRay2.position.y = Math.cos(sunAngle) * 10;
   phase2 = phase();
-  console.log(sunAngle, phase2);
+  //console.log(sunAngle, phase2);
   updateSky(phase2);
 
   sunRayUpdate(phase2);
