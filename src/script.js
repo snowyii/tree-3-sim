@@ -222,6 +222,8 @@ function updateSky(phase) {
     uniform.bottomColor.value.set("black");
   }
 }
+//const ambient = new THREE.AmbientLight(0x444444);
+//scene.add(ambient);
 
 scene.add(sky);
 //gui add camera setting
