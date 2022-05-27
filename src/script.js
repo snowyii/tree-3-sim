@@ -25,26 +25,11 @@ material.normalMap = brick;
 //material.opacity = 0;
 material.color = new THREE.Color(0xffffff);
 
-const material2 = new THREE.MeshStandardMaterial();
-material2.roughness = 0.2;
-material2.metalness = 0.7;
-material2.color = new THREE.Color(0xfa0000); //test sun
-
-const material3 = new THREE.MeshStandardMaterial();
-material3.roughness = 0.2;
-material3.metalness = 0.7;
-material3.color = new THREE.Color(0x00ff00); //test moon
-// Mesh
-
 const sphere = new THREE.Mesh(geometry, material); //center
-const sun = new THREE.Mesh(balls, material2);
-const moon = new THREE.Mesh(balls, material3);
 
-scene.add(sphere);
+//scene.add(sphere);
 //sphere.add(sun);
 //sphere.add(moon);
-sun.position.x = 2;
-moon.position.x = -2;
 //const centerRotate = gui.addFolder("Sphere Rotation");
 //centerRotate.add(sphere.rotation, "x");
 //centerRotate.add(sphere.rotation, "y");
@@ -134,7 +119,7 @@ window.addEventListener("resize", () => {
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(
+var camera = new THREE.PerspectiveCamera(
   75,
   sizes.width / sizes.height,
   0.1,
@@ -143,10 +128,6 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.x = 0;
 camera.position.y = 0;
 camera.position.z = 5;
-//const cam = gui.addFolder("Cameraman");
-//cam.add(camera.position, "x");
-//cam.add(camera.position, "y");
-//cam.add(camera.position, "z");
 
 scene.add(camera);
 
@@ -222,11 +203,109 @@ function updateSky(phase) {
     uniform.bottomColor.value.set("black");
   }
 }
+
+// car
+function createWheels() {
+  const geometry = new THREE.BoxBufferGeometry(12, 12, 33);
+  const material = new THREE.MeshLambertMaterial({ color: 0x333333 });
+  const wheel = new THREE.Mesh(geometry, material);
+  return wheel;
+}
+
+function getCarFrontTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 32;
+  const context = canvas.getContext("2d");
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, 64, 32);
+
+  context.fillStyle = "#666666";
+  context.fillRect(8, 8, 48, 24);
+
+  return new THREE.CanvasTexture(canvas);
+}
+function getCarSideTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 32;
+  const context = canvas.getContext("2d");
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, 128, 32);
+
+  context.fillStyle = "#666666";
+  context.fillRect(10, 8, 38, 24);
+  context.fillRect(58, 8, 60, 24);
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+function createCar() {
+  const car = new THREE.Group();
+
+  const backWheel = createWheels();
+  backWheel.position.y = 6;
+  backWheel.position.x = -18;
+  backWheel.position.z = -20;
+  car.add(backWheel);
+
+  const frontWheel = createWheels();
+  frontWheel.position.y = 6;
+  frontWheel.position.x = 18;
+  frontWheel.position.z = -20;
+  car.add(frontWheel);
+
+  const main = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(60, 15, 30),
+    new THREE.MeshLambertMaterial({ color: 0xa52523 })
+  );
+  main.position.y = 12;
+  main.position.z = -20;
+  car.add(main);
+
+  const carFrontTexture = getCarFrontTexture();
+
+  const carBackTexture = getCarFrontTexture();
+
+  const carRightSideTexture = getCarSideTexture();
+
+  const carLeftSideTexture = getCarSideTexture();
+  carLeftSideTexture.center = new THREE.Vector2(0.5, 0.5);
+  carLeftSideTexture.rotation = Math.PI;
+  carLeftSideTexture.flipY = false;
+
+  const cabin = new THREE.Mesh(new THREE.BoxBufferGeometry(33, 12, 24), [
+    new THREE.MeshLambertMaterial({ map: carFrontTexture }),
+    new THREE.MeshLambertMaterial({ map: carBackTexture }),
+    new THREE.MeshLambertMaterial({ color: 0xffffff }), // top
+    new THREE.MeshLambertMaterial({ color: 0xffffff }), // bottom
+    new THREE.MeshLambertMaterial({ map: carRightSideTexture }),
+    new THREE.MeshLambertMaterial({ map: carLeftSideTexture }),
+  ]);
+  cabin.position.x = -6;
+  cabin.position.y = 25.5;
+  cabin.position.z = -20;
+  car.add(cabin);
+  car.scale.set(0.05, 0.05, 0.05); //scale the size of car
+  car.rotation.set(0.5, 4, 0);
+  car.position.set(-0.5, 0, 0);
+  return car;
+}
+
+const car = createCar();
+scene.add(car);
 //const ambient = new THREE.AmbientLight(0x444444);
 //scene.add(ambient);
 
 scene.add(sky);
 //gui add camera setting
+const cam = gui.addFolder("Cameraman");
+cam.add(camera.position, "x");
+cam.add(camera.position, "y");
+cam.add(camera.position, "z");
+const carPos = gui.addFolder("Car Position");
 
 // Controls
 // const controls = new OrbitControls(camera, canvas)
@@ -238,6 +317,7 @@ scene.add(sky);
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
   alpha: true,
+  antialias: true,
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -252,7 +332,7 @@ const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
   // Update objects
-  sunAngle += 0.01 * Math.PI;
+  sunAngle += 0.005 * Math.PI;
   sunAngle = sunAngle % (2 * Math.PI);
   //sunRay2.position.x = -Math.sin(sunAngle) * 10;
   //sunRay2.position.y = Math.cos(sunAngle) * 10;
