@@ -310,10 +310,11 @@ const car = createCar();
 scene.add(car);
 //plane
 const planeGeo = new THREE.PlaneBufferGeometry(60, 60);
-const floor = new THREE.MeshStandardMaterial();
-floor.Color = new THREE.Color(0x484848);
+const floor = new THREE.MeshLambertMaterial();
+floor.color = new THREE.Color(0x181818);
 floor.roughness = 1;
 floor.metalness = 0;
+floor.reflectivity = 0;
 const plane = new THREE.Mesh(planeGeo, floor);
 //plane.rotation.set(0.5, 4, 0);
 //plane.receiveShadow = true;
