@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
 import { MaterialLoader } from "three";
+import { floorPowerOfTwo } from "three/src/math/MathUtils";
 //loader
 const textureLoader = new THREE.TextureLoader();
 const brick = textureLoader.load("/textures/bricktest.png");
@@ -40,6 +41,7 @@ const sunRay2 = new THREE.DirectionalLight(0xffffff, 1);
 sunRay2.position.z = 0;
 sunRay2.position.x = Math.sin(sunAngle) * 90000;
 sunRay2.position.y = Math.cos(sunAngle) * 90000;
+sunRay2.castShadow = true;
 scene.add(sunRay2);
 
 function phase() {
@@ -55,6 +57,7 @@ const moonRay2 = new THREE.DirectionalLight(0x506886);
 moonRay2.position.z = 0;
 moonRay2.position.x = -Math.sin(sunAngle) * 2;
 moonRay2.position.y = -Math.cos(sunAngle) * 2;
+moonRay2.castShadow = true;
 scene.add(moonRay2);
 function sunRayUpdate(phase) {
   sunRay2.position.x = Math.sin(sunAngle + Math.PI / 2) * 90000;
@@ -71,7 +74,7 @@ function sunRayUpdate(phase) {
         ")"
     );
     if (moonRay2.intensity != 0) {
-      moonRay2.intensity -= 0.1;
+      //moonRay2.intensity -= 0.1;
     }
     //moonRay2.intensity = 0;
   } else if (phase === "twilight") {
@@ -84,10 +87,10 @@ function sunRayUpdate(phase) {
         ",0)"
     );
     if (moonRay2.intensity != 1) {
-      moonRay2.intensity += 0.1;
+      //moonRay2.intensity += 0.1;
     }
   } else {
-    sunRay2.intensity = 0;
+    //sunRay2.intensity = 0;
     moonRay2.intensity = 1;
   }
 }
@@ -128,7 +131,7 @@ var camera = new THREE.PerspectiveCamera(
 camera.position.x = 0;
 camera.position.y = 0;
 camera.position.z = 5;
-
+camera.lookAt(0, 0, 0);
 scene.add(camera);
 
 //sky gang
@@ -191,19 +194,25 @@ function updateSky(phase) {
         (255 - Math.floor(Math.sin(sunAngle) * 510 * -1)) +
         ")"
     );
-    uniform.bottomColor.value.set(
-      "rgb(" +
-        (255 - Math.floor(Math.sin(sunAngle) * 510 * -1)) +
-        "," +
-        (55 - Math.floor(Math.sin(sunAngle) * 110 * -1)) +
-        ",0)"
-    );
+    const a = uniform.bottomColor.value;
+    if (true) {
+      //onsole.log("yes");
+      //{r: 0.16862745098039217, g: 0.1843137254901961, b: 0.4666666666666667}
+
+      uniform.bottomColor.value.set(
+        "rgb(" +
+          (255 - Math.floor(Math.sin(sunAngle) * 510 * -1)) +
+          "," +
+          (55 - Math.floor(Math.sin(sunAngle) * 110 * -1)) +
+          ",0)"
+      );
+    }
   } else {
-    uniform.topColor.value.set("black");
-    uniform.bottomColor.value.set("black");
+    uniform.topColor.value.set("black"); //2B2F77
+    uniform.bottomColor.value.set("#0F0F24");
   }
 }
-
+scene.add(sky);
 // car
 function createWheels() {
   const geometry = new THREE.BoxBufferGeometry(12, 12, 33);
@@ -263,7 +272,8 @@ function createCar() {
   );
   main.position.y = 12;
   main.position.z = -20;
-  car.add(main);
+  main.castShadow = true;
+  main.receiveShadow = car.add(main);
 
   const carFrontTexture = getCarFrontTexture();
 
@@ -287,6 +297,8 @@ function createCar() {
   cabin.position.x = -6;
   cabin.position.y = 25.5;
   cabin.position.z = -20;
+  cabin.castShadow = true;
+  cabin.receiveShadow = true;
   car.add(cabin);
   car.scale.set(0.05, 0.05, 0.05); //scale the size of car
   car.rotation.set(0.5, 4, 0);
@@ -296,10 +308,19 @@ function createCar() {
 
 const car = createCar();
 scene.add(car);
-//const ambient = new THREE.AmbientLight(0x444444);
-//scene.add(ambient);
-
-scene.add(sky);
+//plane
+const planeGeo = new THREE.PlaneBufferGeometry(60, 60);
+const floor = new THREE.MeshStandardMaterial();
+floor.Color = new THREE.Color(0x484848);
+floor.roughness = 1;
+floor.metalness = 0;
+const plane = new THREE.Mesh(planeGeo, floor);
+//plane.rotation.set(0.5, 4, 0);
+//plane.receiveShadow = true;
+scene.add(plane);
+plane.rotation.set(-1, 0, 0);
+plane.castShadow = false;
+plane.receiveShadow = false;
 //gui add camera setting
 const cam = gui.addFolder("Cameraman");
 cam.add(camera.position, "x");
@@ -307,6 +328,10 @@ cam.add(camera.position, "y");
 cam.add(camera.position, "z");
 const carPos = gui.addFolder("Car Position");
 
+const planeRot = gui.addFolder("Plane Rotation");
+planeRot.add(plane.rotation, "x");
+planeRot.add(plane.rotation, "y");
+planeRot.add(plane.rotation, "z");
 // Controls
 // const controls = new OrbitControls(camera, canvas)
 // controls.enableDamping = true
